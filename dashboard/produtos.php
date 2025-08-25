@@ -1,325 +1,390 @@
 <?php
+require_once '../classes/Produtos.php';
 require_once 'header.php';
-require_once '../classes/Produto.php';
-
 $produto = new Produto();
 
-// Buscar todos os produtos para o DataTables
-$produtos = $produto->listarTodosProdutos();
-?>
+// Paginação simples
+$pagina = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
+$por_pagina = 1000; // DataTables já cuida da paginação no front
 
+$produtos = $produto->listarProdutos($pagina, $por_pagina);
+?>
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão de Produtos</title>
-    
-    <!-- CDNs -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    
-    <!-- DataTables CSS -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <title>Gerenciar Produtos</title>
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- DataTables -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
-    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
         :root {
-            --primary-color: #4e73df;
-            --secondary-color: #6f42c1;
-            --success-color: #1cc88a;
-            --danger-color: #e74a3b;
-            --warning-color: #f6c23e;
-            --light-bg: #f8f9fc;
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --success-color: #4cc9f0;
+            --light-bg: #f8f9fa;
+            --dark-text: #212529;
+            --light-text: #6c757d;
+            --border-radius: 12px;
+            --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
         }
         
         body {
-            background-color: var(--light-bg);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fb;
+            font-family: 'Poppins', sans-serif;
+            color: var(--dark-text);
+            padding-bottom: 2rem;
         }
         
         .page-header {
-            border-bottom: 1px solid #e3e6f0;
-            padding-bottom: 1rem;
-            margin-bottom: 1.5rem;
+            background: linear-gradient(120deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--box-shadow);
         }
         
         .card {
             border: none;
-            border-radius: 0.35rem;
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-            margin-bottom: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
         }
         
         .card-header {
-            background-color: #f8f9fc;
-            border-bottom: 1px solid #e3e6f0;
-            padding: 0.75rem 1.25rem;
+            background-color: white;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding: 1.25rem 1.5rem;
             font-weight: 600;
+            border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
         }
         
-        .product-img {
-            width: 50px;
-            height: 50px;
-            object-fit: cover;
-            border-radius: 4px;
+        .btn-primary {
+            background: linear-gradient(120deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            border-radius: 50px;
+            padding: 0.6rem 1.5rem;
+            font-weight: 500;
+            transition: var(--transition);
         }
         
-        .status-badge {
-            padding: 0.35rem 0.5rem;
-            border-radius: 0.35rem;
-            font-size: 0.75rem;
-            font-weight: 600;
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(67, 97, 238, 0.3);
+        }
+        
+        .btn-sm {
+            padding: 0.35rem 0.8rem;
+            font-size: 0.875rem;
         }
         
         .btn-action {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.875rem;
-            border-radius: 0.2rem;
+            border-radius: 8px;
+            margin: 0 2px;
         }
         
-        .dataTables_filter {
-            margin-bottom: 1rem;
+        .table-hover tbody tr {
+            transition: var(--transition);
         }
         
-        .dataTables_filter label {
-            display: flex;
-            align-items: center;
+        .table-hover tbody tr:hover {
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+        
+        .status-badge {
+            padding: 0.35rem 0.65rem;
+            border-radius: 50px;
+            font-weight: 500;
+            font-size: 0.75rem;
+        }
+        
+        .dataTables_wrapper {
+            padding: 0;
         }
         
         .dataTables_filter input {
-            margin-left: 0.5rem;
-            border-radius: 0.35rem;
-            border: 1px solid #d1d3e2;
+            border-radius: 50px;
             padding: 0.375rem 0.75rem;
+            border: 1px solid #ced4da;
         }
         
-        .dataTables_info {
-            padding-top: 1rem !important;
+        #tabelaProdutos th {
+            font-weight: 600;
+            color: var(--dark-text);
         }
         
-        .dataTables_paginate {
-            padding-top: 1rem !important;
+        .action-buttons {
+            white-space: nowrap;
         }
         
+        .product-image {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        
+        /* Custom DataTables pagination */
+        .page-item.active .page-link {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            border-radius: 8px;
+        }
+        
+        .page-link {
+            border-radius: 8px;
+            margin: 0 3px;
+            color: var(--primary-color);
+        }
+        
+        /* Responsive adjustments */
         @media (max-width: 768px) {
-            .dataTables_wrapper .dataTables_filter {
-                float: none;
+            .page-header {
+                padding: 1rem;
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+            
+            .page-header > div {
                 text-align: center;
             }
             
-            .dataTables_wrapper .dataTables_length {
-                text-align: center;
+            .card-header {
+                padding: 1rem;
             }
             
-            .dataTables_wrapper .dataTables_paginate {
-                text-align: center;
+            .table-responsive {
+                border-radius: var(--border-radius);
             }
             
-            .table td {
-                font-size: 0.875rem;
+            .btn-new-product {
+                width: 100%;
             }
             
-            .btn-action {
-                font-size: 0.75rem;
+            .dataTables_wrapper .row {
+                margin: 0;
+            }
+            
+            .dataTables_length, .dataTables_filter {
+                margin-bottom: 1rem;
+            }
+            
+            .dataTables_length select, .dataTables_filter input {
+                width: 100% !important;
             }
         }
         
-        /* Estilo personalizado para a tabela DataTables */
-        table.dataTable thead th {
-            border-bottom: 2px solid #e3e6f0;
+        @media (max-width: 576px) {
+            .container-fluid {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+            
+            .page-header h2 {
+                font-size: 1.5rem;
+            }
+            
+            .card-header h5 {
+                font-size: 1.2rem;
+            }
+            
+            .btn {
+                padding: 0.5rem 1rem;
+            }
         }
         
-        table.dataTable tbody tr {
-            background-color: white;
+        /* Animation for new product button */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
         
-        table.dataTable tbody tr:hover {
-            background-color: rgba(78, 115, 223, 0.05);
+        .btn-new-product {
+            animation: pulse 2s infinite;
         }
         
-        table.dataTable tbody tr.even {
-            background-color: #f8f9fc;
+        /* Mobile-first adjustments */
+        .dtr-details li {
+            display: flex;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #eee;
+            padding: 0.5rem 0;
         }
         
-        table.dataTable tbody tr.even:hover {
-            background-color: rgba(78, 115, 223, 0.05);
+        .dtr-details .dtr-title {
+            font-weight: 600;
+            min-width: 40%;
+            margin-right: 1rem;
+        }
+        
+        .dtr-details .dtr-data {
+            flex: 1;
+        }
+        
+        /* Hide columns on mobile */
+        @media (max-width: 992px) {
+            .hide-on-mobile {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container-fluid py-4">
-        <div class="row">
-            <div class="col-12">
-                <div class="page-header d-flex justify-content-between align-items-center">
-                    <h1 class="h3 mb-0 text-gray-800 animate__animated animate__fadeInDown">
-                        <i class="fas fa-boxes text-primary me-2"></i> Gestão de Produtos
-                    </h1>
-                    <a href="cadastrar_produto.php" class="btn btn-primary btn-icon-split animate__animated animate__fadeIn">
-                        <span class="icon text-white-50">
-                            <i class="fas fa-plus"></i>
-                        </span>
-                        <span class="text">Novo Produto</span>
-                    </a>
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    <h2 class="mb-1"><i class="fas fa-boxes me-2"></i> Gerenciamento de Produtos</h2>
+                    <p class="mb-0 opacity-75">Visualize, edite e gerencie todos os produtos do sistema</p>
                 </div>
-                
-                <!-- Card de Estatísticas -->
-                <div class="row mb-4 animate__animated animate__fadeIn">
-                    <div class="col-xl-3 col-md-6 mb-4">
-                        <div class="card border-left-primary h-100 py-2">
-                            <div class="card-body">
-                                <div class="row no-gutters align-items-center">
-                                    <div class="col mr-2">
-                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                            Total de Produtos</div>
-                                        <div class="h5 mb-0 font-weight-bold text-gray-800"><?= count($produtos) ?></div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <i class="fas fa-boxes fa-2x text-gray-300"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Tabela de Produtos -->
-                <div class="card animate__animated animate__fadeInUp">
-                    <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 font-weight-bold text-primary">Lista de Produtos</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table id="tabela-produtos" class="table table-hover" style="width:100%">
-                                <thead>
+                <a href="produto_form.php" class="btn btn-light btn-new-product">
+                    <i class="fas fa-plus-circle me-2"></i> Novo Produto
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Lista de Produtos</h5>
+                 </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="tabelaProdutos" class="table table-hover" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>Imagem</th>
+                                    <th>Nome</th>
+                                    <th class="hide-on-mobile">Código de Barras</th>
+                                    <th class="hide-on-mobile">Categoria</th>
+                                    <th>Preço</th>
+                                    <th>Status</th>
+                                    <th width="120px" class="text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($produtos as $p): 
+                                    $imagem_path = "../" . $p['foto_path'];
+                                    $imagem_existe = file_exists($imagem_path);
+                                ?>
                                     <tr>
-                                        <th>ID</th>
-                                        <th>Foto</th>
-                                        <th>Código</th>
-                                        <th>Nome</th>
-                                        <th>Categoria</th>
-                                        <th>Preço Unit.</th>
-                                        <th>Preço Caixa</th>
-                                        <th>Estoque</th>
-                                        <th>Status</th>
-                                        <th class="text-center">Ações</th>
+                                        <td>
+                                            <?php if ($imagem_existe): ?>
+                                                <img src="<?= $imagem_path ?>?t=<?= time() ?>" class="product-image" alt="<?= htmlspecialchars($p['nome']) ?>">
+                                            <?php else: ?>
+                                                <div class="product-image bg-light d-flex align-items-center justify-content-center rounded">
+                                                    <i class="fas fa-image text-muted"></i>
+                                                </div>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="fw-semibold"><?= htmlspecialchars($p['nome']) ?></td>
+                                        <td class="hide-on-mobile">
+                                            <span class="font-monospace"><?= htmlspecialchars($p['codigo_barras']) ?></span>
+                                        </td>
+                                        <td class="hide-on-mobile">
+                                            <span class="badge bg-light text-dark"><?= htmlspecialchars($p['categoria'] ?? 'Sem categoria') ?></span>
+                                        </td>
+                                        <td class="fw-bold text-nowrap">R$ <?= number_format($p['vr_unitario'], 2, ',', '.') ?></td>
+                                        <td>
+                                            <?php if ($p['status'] === 'ativo'): ?>
+                                                <span class="status-badge bg-success"><i class="fas fa-check-circle me-1"></i> Ativo</span>
+                                            <?php else: ?>
+                                                <span class="status-badge bg-secondary"><i class="fas fa-times-circle me-1"></i> Inativo</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="text-center action-buttons">
+                                            <a href="produto_form.php?id=<?= $p['id'] ?>" 
+                                               class="btn btn-sm btn-primary btn-action" 
+                                               data-bs-toggle="tooltip" 
+                                               title="Editar produto">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    <?php if ($produtos): ?>
-                                        <?php foreach ($produtos as $p): ?>
-                                            <tr>
-                                                <td><?= $p['id'] ?></td>
-                                                <td>
-                                                    <?php
-                                                    $foto = !empty($p['foto_path']) && file_exists("../" . $p['foto_path']) 
-                                                        ? "../" . $p['foto_path'] 
-                                                        : "https://via.placeholder.com/50x50/e9ecef/868e96?text=Sem+Foto";
-                                                    ?>
-                                                    <img src="<?= $foto ?>" alt="Foto <?= htmlspecialchars($p['nome']) ?>" class="product-img">
-                                                </td>
-                                                <td><?= htmlspecialchars($p['codigo_barras']) ?></td>
-                                                <td><?= htmlspecialchars($p['nome']) ?></td>
-                                                <td><?= htmlspecialchars($p['categoria_nome']) ?></td>
-                                                <td>R$ <?= number_format($p['vr_unitario'], 2, ',', '.') ?></td>
-                                                <td>R$ <?= number_format($p['vr_caixa'], 2, ',', '.') ?></td>
-                                                <td>
-                                                    <span class="<?= $p['estoque'] < 10 ? 'text-danger fw-bold' : '' ?>">
-                                                        <?= $p['estoque'] ?>
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <?php if($p['status'] === 'ativo'): ?>
-                                                        <span class="status-badge bg-success text-white">
-                                                            <i class="fas fa-check-circle me-1"></i> Ativo
-                                                        </span>
-                                                    <?php else: ?>
-                                                        <span class="status-badge bg-secondary text-white">
-                                                            <i class="fas fa-ban me-1"></i> Inativo
-                                                        </span>
-                                                    <?php endif; ?>
-                                                </td>
-                                                <td class="text-center">
-                                                    <a href="editar_produto.php?id=<?= $p['id'] ?>" class="btn btn-sm btn-action btn-primary" title="Editar">
-                                                        <i class="fas fa-edit"></i>
-                                                        <span class="d-none d-md-inline"> Editar</span>
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    <?php else: ?>
-                                        <tr>
-                                            <td colspan="10" class="text-center py-4">
-                                                <i class="fas fa-inbox fa-3x text-muted mb-2"></i>
-                                                <p class="text-muted">Nenhum produto encontrado.</p>
-                                                <a href="cadastrar_produto.php" class="btn btn-primary mt-2">
-                                                    <i class="fas fa-plus me-1"></i> Cadastrar Primeiro Produto
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    <?php endif; ?>
-                                </tbody>
-                            </table>
-                        </div>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- JS Bootstrap -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- jQuery (necessário para DataTables) -->
-    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
-    
-    <!-- DataTables JS -->
-    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
-    
-    <script>
-        // Inicializar DataTables
-        $(document).ready(function() {
-            $('#tabela-produtos').DataTable({
-                responsive: true,
-                language: {
-                    url: 'https://cdn.datatables.net/plug-ins/1.13.7/i18n/pt-BR.json',
-                    decimal: ",",
-                    thousands: "."
-                },
-                columnDefs: [
-                    { responsivePriority: 1, targets: 3 }, // Nome
-                    { responsivePriority: 2, targets: 9 }, // Ações
-                    { orderable: false, targets: [1, 9] }, // Colunas não ordenáveis (foto e ações)
-                    { searchable: false, targets: [1, 9] } // Colunas não pesquisáveis (foto e ações)
-                ],
-                order: [[0, 'desc']], // Ordenar por ID decrescente
-                pageLength: 10, // Itens por página
-                lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "Todos"]],
-                dom: '<"row"<"col-md-6"l><"col-md-6"f>>rt<"row"<"col-md-6"i><"col-md-6"p>>'
-            });
-            
-            // Adicionar animação ao carregar a página
-            const animatedElements = document.querySelectorAll('.animate__animated');
-            
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const animation = entry.target.getAttribute('data-animation');
-                        entry.target.classList.add(animation || 'animate__fadeIn');
+<!-- JS: Bootstrap + DataTables -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Initialize DataTable with responsive features
+    $('#tabelaProdutos').DataTable({
+        "language": {
+            "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json"
+        },
+        "pageLength": 10,
+        "lengthMenu": [5, 10, 25, 50, 100],
+        "order": [[1, "asc"]], // Order by name (second column)
+        "columnDefs": [
+            { "orderable": false, "targets": [0, 5, 6] }, // Disable sorting for image, status and actions columns
+            { "responsivePriority": 1, "targets": 1 }, // Name column has highest priority
+            { "responsivePriority": 2, "targets": 4 }, // Price column
+            { "responsivePriority": 3, "targets": 6 }  // Actions column
+        ],
+        "dom": '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
+        "responsive": {
+            details: {
+                display: $.fn.dataTable.Responsive.display.modal({
+                    header: function (row) {
+                        var data = row.data();
+                        return 'Detalhes do Produto: ' + data[1];
                     }
-                });
-            }, { threshold: 0.1 });
-            
-            animatedElements.forEach(el => {
-                observer.observe(el);
-            });
-        });
-    </script>
+                }),
+                renderer: $.fn.dataTable.Responsive.renderer.tableAll({
+                    tableClass: 'table'
+                })
+            }
+        },
+        "initComplete": function() {
+            // Add custom class to pagination elements
+            $('.dataTables_paginate').addClass('mt-3');
+            $('.dataTables_info').addClass('mt-3');
+        }
+    });
+    
+    // Initialize tooltips
+    $('[data-bs-toggle="tooltip"]').tooltip();
+    
+    // Window resize adjustments
+    $(window).on('resize', function() {
+        $('#tabelaProdutos').DataTable().columns.adjust().responsive.recalc();
+    });
+});
+</script>
 </body>
 </html>
-
-<?php require_once 'footer.php'; ?>
+<?php include 'footer.php'; ?>
